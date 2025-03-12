@@ -8,7 +8,7 @@ use App\Notifications\NewChirp;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class SendChirpCreatedNotification implements ShouldQueue
+class SendChirpCreatedNotifications implements ShouldQueue
 {
     /**
      * Create the event listener.
@@ -23,8 +23,10 @@ class SendChirpCreatedNotification implements ShouldQueue
      */
     public function handle(ChirpCreated $event): void
     {
-        foreach(User::wherenNot('id', $event->chirp->user_id)->cursor() as $user) {
+        foreach (User::whereNot('id', $event->chirp->user_id)->cursor() as $user) {
+
             $user->notify(new NewChirp($event->chirp));
+
         }
     }
 }

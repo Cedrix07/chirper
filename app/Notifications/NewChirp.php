@@ -37,11 +37,11 @@ class NewChirp extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->subject("New Chirp from {$this->chirp->user->name}")
-                    ->greeting("New Chirp from {$this->chirp->user->name}")
-                    ->line(Str::limit($this->chirp->message, 50))
-                    ->action('Go to Chirper', url('/'))
-                    ->line('Thank you for using our application!');
+            ->subject("New Chirp from {$this->chirp->user->name}")
+            ->greeting("New Chirp from {$this->chirp->user->name}")
+            ->line(Str::limit($this->chirp->message, 50))
+            ->action('Go to Chirper', url('/'))
+            ->line('Thank you for using our application!');
     }
 
     /**
