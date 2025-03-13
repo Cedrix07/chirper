@@ -23,12 +23,10 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <span class="text-gray-800">{{ $chirp->user->name }}</span>
-                                <small class="ml-2 text-sm text-gray-600 chirp-timestamp">
-                                    {{ $chirp->created_at->format('j M Y, g:i a') }}
-                                </small>
-                                @if (!$chirp->created_at->eq($chirp->updated_at))
-                                    <small class="text-sm text-gray-600 chirp-edited"> · edited</small>
-                                @endif
+                                <small class="ml-2 text-sm text-gray-600">{{ $chirp->created_at->format('j M Y, g:i a') }}</small>
+                                @unless ($chirp->created_at->eq($chirp->updated_at))
+                                    <small class="text-sm text-gray-600"> &middot; {{ __('edited') }}</small>
+                                @endunless
                             </div>
                             @if ($chirp->user->is(auth()->user()))
                                 <x-dropdown>
@@ -83,34 +81,9 @@
             }
 
             function updateChirp(event) {
-                const chirpElement = document.getElementById(`chirp-${event.id}`);
+                 const chirpElement = document.getElementById(`chirp-${event.id}`);
                 if (chirpElement) {
-                    // Update the message
-                    chirpElement.querySelector("p").textContent = event.message;
-
-                    // Update the timestamp
-                    const timestampElement = chirpElement.querySelector(".chirp-timestamp");
-                    if (timestampElement) {
-                        timestampElement.textContent = event.created_at;
-                    }
-
-                    // Check if "edited" text already exists
-                    let editedElement = chirpElement.querySelector(".chirp-edited");
-
-                    if (event.is_edited) {
-                        if (!editedElement) {
-                            // If "edited" label doesn't exist, create it
-                            editedElement = document.createElement("small");
-                            editedElement.classList.add("text-sm", "text-gray-600", "chirp-edited");
-                            editedElement.textContent = " · edited";
-                            timestampElement.after(editedElement);
-                        }
-                    } else {
-                        // If not edited, remove the "edited" label if it exists
-                        if (editedElement) {
-                            editedElement.remove();
-                        }
-                    }
+                    chirpElement.innerHTML = getChirpTemplate(event);
                 }
             }
 
@@ -130,12 +103,9 @@
                     <div class="flex-1">
                         <div class="flex justify-between items-center">
                             <div>
-                                <small class="ml-2 text-sm text-gray-600 chirp-timestamp">
-                                    {{ $chirp->created_at->format('j M Y, g:i a') }}
-                                </small>
-                                @if (!$chirp->created_at->eq($chirp->updated_at))
-                                    <small class="text-sm text-gray-600 chirp-edited"> · edited</small>
-                                @endif
+                                <span class="text-gray-800">${event.user}</span>
+                                <small class="ml-2 text-sm text-gray-600">${event.created_at}</small>
+                                ${event.is_edited ? `<small class="text-sm text-gray-600"> &middot; edited</small>` : ''}
                             </div>
                         </div>
                         <p class="mt-4 text-lg text-gray-900">${event.message}</p>

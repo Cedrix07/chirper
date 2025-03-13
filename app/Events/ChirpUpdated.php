@@ -40,7 +40,8 @@ class ChirpUpdated implements ShouldBroadcastNow
             'user' => $this->chirp->user->name,
             'message' => $this->chirp->message,
             'created_at' => $this->chirp->created_at->format('j M Y, g:i a'),
-            'is_edited' => !$this->chirp->created_at->eq($this->chirp->updated_at), // True if edited
+            'updated_at' => $this->chirp->updated_at->format('j M Y, g:i a'),
+            'is_edited' => $this->chirp->created_at != $this->chirp->updated_at, // Check if edited
         ];
     }
 }
