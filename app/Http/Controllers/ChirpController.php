@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChirpDeleted;
+use App\Events\ChirpPosted;
+use App\Events\ChirpUpdated;
 use App\Models\Chirp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,8 +43,8 @@ class ChirpController extends Controller
             'message' => 'required|string|max:255',
         ]);
 
-        $request->user()->chirps()->create($validated);
-
+        $chirp = $request->user()->chirps()->create($validated);
+        broadcast(new ChirpPosted($chirp))->toOthers();
         return redirect(route('chirps.index'));
     }
 
@@ -59,7 +62,9 @@ class ChirpController extends Controller
     public function edit(Chirp $chirp)
     {
         // check if user can edit
-        Gate::authorize(Chirp::class, $chirp);
+        // Correct syntax for authorization
+        Gate::authorize('update', $chirp);
+
         return view('chirps.edit', compact('chirp'));
     }
 
@@ -74,7 +79,8 @@ class ChirpController extends Controller
         ]);
 
         $chirp->update($validated);
-
+        // Ensure we pass the updated chirp instance
+        broadcast(new ChirpUpdated($chirp->fresh()))->toOthers();
         return redirect(route('chirps.index'));
     }
 
@@ -85,6 +91,7 @@ class ChirpController extends Controller
     {
         Gate::authorize('delete', $chirp);
         $chirp->delete();
+        broadcast(new ChirpDeleted($chirp->id))->toOthers();
         return redirect(route('chirps.index'));
     }
 }

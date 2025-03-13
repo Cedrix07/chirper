@@ -47,7 +47,7 @@ class ChirpPolicy
     public function delete(User $user, Chirp $chirp): bool
     {
         // Only allow the user to delete their own chirps by reusing the update method
-        return $this->update($user, $chirp);
+        return $user->id === $chirp->user_id;
     }
 
     /**

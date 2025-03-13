@@ -5,15 +5,15 @@
             <textarea
                 name="message"
                 placeholder="{{ __('What\'s on your mind?') }}"
-                class="block w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm"
+                class="block w-full border-gray-300 focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 rounded-md shadow-sm"
             >{{ old('message') }}</textarea>
             <x-input-error :messages="$errors->get('message')" class="mt-2" />
             <x-primary-button class="mt-4">{{ __('Chirp') }}</x-primary-button>
         </form>
 
-        <div class="mt-6 bg-white shadow-md rounded-lg divide-y">
+        <div class="mt-6 bg-white shadow-md rounded-lg space-y-2" id="chirps">
             @foreach($chirps as $chirp)
-                <div class="p-6 flex space-x-2">
+                <div class="p-6 flex space-x-2" id="chirp-{{ $chirp->id }}">
 
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 -scale-x-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -23,10 +23,12 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <span class="text-gray-800">{{ $chirp->user->name }}</span>
-                                <small class="ml-2 text-sm text-gray-600">{{ $chirp->created_at->format('j M Y, g:i a') }}</small>
-                                @unless ($chirp->created_at->eq($chirp->updated_at))
-                                    <small class="text-sm text-gray-600"> &middot; {{ __('edited') }}</small>
-                                @endunless
+                                <small class="ml-2 text-sm text-gray-600 chirp-timestamp">
+                                    {{ $chirp->created_at->format('j M Y, g:i a') }}
+                                </small>
+                                @if (!$chirp->created_at->eq($chirp->updated_at))
+                                    <small class="text-sm text-gray-600 chirp-edited"> · edited</small>
+                                @endif
                             </div>
                             @if ($chirp->user->is(auth()->user()))
                                 <x-dropdown>
@@ -61,4 +63,87 @@
             @endforeach
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const chirpContainer = document.querySelector('#chirps');
+
+            Echo.private('chirps')
+                .listen('ChirpPosted', (event) => addChirp(event))
+                .listen('ChirpUpdated', (event) => updateChirp(event))
+                .listen('ChirpDeleted', (event) => removeChirp(event.id));
+
+            function addChirp(event) {
+                const chirpHtml = `
+                    <div class="p-6 flex space-x-2" id="chirp-${event.id}">
+                        ${getChirpTemplate(event)}
+                    </div>
+                `;
+                chirpContainer.insertAdjacentHTML('afterbegin', chirpHtml);
+            }
+
+            function updateChirp(event) {
+                const chirpElement = document.getElementById(`chirp-${event.id}`);
+                if (chirpElement) {
+                    // Update the message
+                    chirpElement.querySelector("p").textContent = event.message;
+
+                    // Update the timestamp
+                    const timestampElement = chirpElement.querySelector(".chirp-timestamp");
+                    if (timestampElement) {
+                        timestampElement.textContent = event.created_at;
+                    }
+
+                    // Check if "edited" text already exists
+                    let editedElement = chirpElement.querySelector(".chirp-edited");
+
+                    if (event.is_edited) {
+                        if (!editedElement) {
+                            // If "edited" label doesn't exist, create it
+                            editedElement = document.createElement("small");
+                            editedElement.classList.add("text-sm", "text-gray-600", "chirp-edited");
+                            editedElement.textContent = " · edited";
+                            timestampElement.after(editedElement);
+                        }
+                    } else {
+                        // If not edited, remove the "edited" label if it exists
+                        if (editedElement) {
+                            editedElement.remove();
+                        }
+                    }
+                }
+            }
+
+
+            function removeChirp(chirpId) {
+                const chirpElement = document.getElementById(`chirp-${chirpId}`);
+                if (chirpElement) {
+                    chirpElement.remove();
+                }
+            }
+
+            function getChirpTemplate(event) {
+                return `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 -scale-x-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <small class="ml-2 text-sm text-gray-600 chirp-timestamp">
+                                    {{ $chirp->created_at->format('j M Y, g:i a') }}
+                                </small>
+                                @if (!$chirp->created_at->eq($chirp->updated_at))
+                                    <small class="text-sm text-gray-600 chirp-edited"> · edited</small>
+                                @endif
+                            </div>
+                        </div>
+                        <p class="mt-4 text-lg text-gray-900">${event.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+
+
 </x-app-layout>
