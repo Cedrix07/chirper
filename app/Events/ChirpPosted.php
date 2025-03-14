@@ -36,6 +36,12 @@ class ChirpPosted implements ShouldBroadcastNow
         ];
     }
 
+    /**
+     * Get the data to broadcast for the notification.
+     *
+     * @return array
+     */
+    //
     public function broadcastWith()
     {
         return [
